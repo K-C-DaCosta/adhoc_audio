@@ -1,0 +1,55 @@
+[package]
+name = "audio_recorder"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[features]
+default = []
+desktop = ["rand"]
+
+
+[dependencies]
+wasm-bindgen = { version = "0.2.78" }
+js-sys = { version = "0.3.55" }
+wasm-bindgen-futures = "0.4.28"
+serde = { version = "*", features = ['derive'] }
+bincode = "*"
+serde_json = "*"
+rand = { version = "*", optional = true }
+
+
+[dependencies.fixed]
+version = "1.10"
+features = ["serde"]
+
+[dependencies.web-sys]
+version = "0.3.4"
+features = [
+  'Document',
+  'Element',
+  'HtmlElement',
+  'Node',
+  'Window',
+  'AudioContext',
+  'BaseAudioContext',
+  'AudioNode',
+  'AudioBuffer',
+  'Navigator',
+  'MediaDevices',
+  'MediaDeviceInfo',
+  'MediaStream',
+  'MediaStreamConstraints',
+  'MediaStreamAudioSourceNode',
+  'MediaStreamAudioDestinationNode',
+  'ScriptProcessorNode',
+  'AudioDestinationNode',
+  'AudioProcessingEvent',
+  'Worklet',
+  'AudioWorklet',
+  'WorkletOptions',
+  'AudioWorkletNode',
+  'AudioParamMap',
+  'console',
+]
