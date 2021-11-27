@@ -6,7 +6,7 @@ use std::ops::{Index, IndexMut};
 
 #[derive(Serialize, Deserialize,Clone,Copy)]
 pub struct CircularStack<T> {
-    data: [T; 16],
+    data: [T; 4],
     cursor: u32,
     len: u32,
 }
@@ -17,7 +17,7 @@ where
 {
     pub fn new() -> Self {
         Self {
-            data: [T::default(); 16],
+            data: [T::default(); 4],
             cursor: 0,
             len: 0,
         }
@@ -33,15 +33,15 @@ where
 
     pub fn push(&mut self, item: T) {
         let len = self.data.len() as u32;
-        let idx = self.cursor % len;
+        let idx = self.cursor&3;
         self[idx] = item;
-        self.cursor = (self.cursor + 1) % len;
+        self.cursor = (self.cursor + 1) &3;
         self.len = (len + 1).min(len);
     }
     
     pub fn pop(&mut self) -> T {
         let len = self.data.len() as u32;
-        self.cursor = ((self.cursor + len) - 1) % len;
+        self.cursor = ((self.cursor + 4) - 1) & 3;
         self.len = (len - 1).min(0);
         let item = self[self.cursor];
         item
@@ -51,7 +51,7 @@ where
     pub fn prev(&self, mut offset: u32) -> T {
         let len = self.data.len() as u32;
         offset = offset.clamp(1, len-1);
-        let idx = ((self.cursor + len) - offset) % len;
+        let idx = ((self.cursor + len) - offset) & 3;
         self[idx]
     }
 }
@@ -74,7 +74,7 @@ mod test {
     use super::CircularStack;
 
     #[test]
-    fn sanity_test() {
+    fn sanity() {
         let mut queue: CircularStack<u32> = CircularStack::new();
 
         queue.push(1);
@@ -84,7 +84,7 @@ mod test {
     }
 
     #[test]
-    fn sanity_test_2() {
+    fn sanity_2() {
         let mut queue: CircularStack<u32> = CircularStack::new();
         queue.push(1);
         assert_eq!(1, queue.prev(1));
@@ -94,7 +94,7 @@ mod test {
     }
 
     #[test]
-    fn sanity_test_3() {
+    fn sanity_3() {
         let mut queue: CircularStack<u32> = CircularStack::new();
         queue.push(1);
         assert_eq!(1, queue.prev(1));

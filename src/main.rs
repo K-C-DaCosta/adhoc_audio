@@ -22,8 +22,8 @@ use web_sys::{
 
 use audio_recorder::{
     math,
-    codec::{AudioStream, AudioStreamCodec,StreamInfo},
-    collections::{BitStream, CircularStack, LinkedList, Ptr},
+    codec::{AdhocCodec},
+    collections::{ LinkedList, Ptr},
     signal
 };
 
@@ -71,7 +71,7 @@ pub static mut LMAO_A_GLOBAL_FUNCTION: Option<js_sys::Function> = None;
 
 pub struct AppState{
     output_buffer:Vec<f32>,
-    audio_codec:AudioStreamCodec,
+    audio_codec:AdhocCodec,
     callback_registry: JsCallBackPool,
 }
 impl AppState{
@@ -80,7 +80,7 @@ impl AppState{
             GLOBAL_APP_STATE = Some(
                 AppState{
                     output_buffer:vec![0.0;1024],
-                    audio_codec: AudioStreamCodec::new(),
+                    audio_codec: AdhocCodec::new(),
                     callback_registry: JsCallBackPool::new(),
                 }
             );

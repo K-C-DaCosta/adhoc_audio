@@ -71,6 +71,9 @@ impl BitStream {
     pub fn capacity(&self) -> usize {
         self.capacity as usize
     }
+
+    /// # Description
+    /// writes up to 128 bits into the stream
     pub fn write_bits<T>(&mut self, val: T, num_bits: usize)
     where
         T: Copy,
@@ -158,7 +161,9 @@ impl BitStream {
         let extracted_bit = self.binary[chunk_idx] >> bit_idx;
         extracted_bit & 1
     }
-
+    
+    /// # Description
+    /// read `bit_count` bits into the stream where (`bit_count` <= 128)
     pub fn read_bits(&mut self, bit_count: usize) -> u128 {
         let peeked_val = self.peek_bits(bit_count);
         self.offset_bit_cursor(bit_count as i128);
@@ -180,7 +185,7 @@ impl BitStream {
         self.write_bits(val, mem::size_of::<T>() * 8)
     }
 
-    //read by fixed amount
+    ///read bits by fixed amount
     pub fn read<T>(&mut self) -> u128
     where
         T: Copy,
@@ -248,15 +253,29 @@ impl BitStream {
 
         //write sign bit
         self.write_bit(sign_bit as u8);
+
         //write unary quotient
-        while quotient > 0 && quotient % 16 != 0 {
-            self.write_bit(1);
-            quotient -= 1;
+        // while quotient > 0 && quotient % 8 != 0 {
+        //     self.write_bit(1);
+        //     quotient -= 1;
+        // }
+        // while quotient > 0 && quotient % 8 == 0 {
+        //     self.write::<u8>(!0);
+        //     quotient -= 8;
+        // }
+
+        while quotient > 0 {
+            if quotient > 128 {
+                self.write_bits(!0u128, 128);
+                quotient -= 128;
+            } else {
+                self.write_bits(!0u128, quotient as usize);
+                break;
+            }
         }
-        while quotient > 0 && quotient % 16 == 0 {
-            self.write::<u16>(!0);
-            quotient -= 16;
-        }
+
+        // self.write_bits(!0u128,quotient as usize);
+
         //zero bit denotes end of unary value
         self.write_bit(0);
         //write remainder
@@ -333,6 +352,10 @@ impl BitStream {
 
     pub fn set_bit_cursor(&mut self, idx: u128) {
         self.bit_cursor = idx;
+    }
+
+    pub fn bit_cursor(&self) -> u128 {
+        self.bit_cursor
     }
 }
 

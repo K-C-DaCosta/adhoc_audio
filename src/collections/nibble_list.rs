@@ -28,7 +28,7 @@ impl NibbleList {
             self.data.push(0);
         }
         self.data[block_idx] |= val << 4 * (nibble_idx);
-        self.nibble_count+=1;
+        self.nibble_count += 1;
     }
 
     pub fn get(&self, idx: usize) -> u8 {
@@ -59,16 +59,35 @@ impl NibbleList {
     }
 }
 
+mod tests {
 
-mod tests{
+    #[allow(unused_imports)]
     use super::NibbleList;
-    
+
     #[test]
-    fn sanity(){
+    fn sanity() {
         let mut list = NibbleList::new();
-        let input = [1u8,2,3,4,5,6,7];
-        input.iter().for_each(|&b|  list.push(b as u8));
-        assert_eq!(&input,list.iter().collect::<Vec<_>>().as_slice());
-        assert_eq!(input.len(),list.len());
+        let input = [1u8, 2, 3, 4, 5, 6, 7];
+        input.iter().for_each(|&b| list.push(b as u8));
+        assert_eq!(&input, list.iter().collect::<Vec<_>>().as_slice());
+        assert_eq!(input.len(), list.len());
+
+        list.set(6, 10);
+        assert_eq!(
+            vec![1, 2, 3, 4, 5, 6, 10],
+            list.iter().collect::<Vec<_>>().as_slice()
+        );
+
+        list.set(5, 1);
+        assert_eq!(
+            vec![1, 2, 3, 4, 5, 1, 10],
+            list.iter().collect::<Vec<_>>().as_slice()
+        );
+
+        list.set(0, 10);
+        assert_eq!(
+            vec![10, 2, 3, 4, 5, 1, 10],
+            list.iter().collect::<Vec<_>>().as_slice()
+        );
     }
 }

@@ -13,6 +13,7 @@ mod bitstream;
 mod queue; 
 mod stack;
 mod nibble_list;
+mod bitvec;
 
 pub use linked_list::*;
 pub use lru_cache::*;
@@ -20,6 +21,7 @@ pub use bitstream::*;
 pub use queue::*; 
 pub use stack::*; 
 pub use nibble_list::*;
+pub use bitvec::*;
 
 type InternalPtr = u32;
 
