@@ -97,6 +97,9 @@ impl WavCodec {
             short_cursor: 0,
         }
     }
+    pub fn info(&self)->StreamInfo{
+        self.info
+    }
 
     /// # Description
     /// Writes wav file to `Resource`

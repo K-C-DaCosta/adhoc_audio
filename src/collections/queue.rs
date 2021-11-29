@@ -14,6 +14,10 @@ pub struct FixedRingBuffer<BACKING> {
 
 impl<BACKING> FixedRingBuffer<BACKING> {
     pub fn new(backing: BACKING, capacity: u32) -> Self {
+        if capacity.count_ones() != 1 {
+            panic!("capacity must be a power of 2")
+        }
+
         Self {
             backing,
             front: 0,
@@ -41,7 +45,7 @@ where
 
     pub fn push_front(&mut self, item: T) {
         if self.is_full() == false {
-            self.front = (self.front + self.capacity - 1) % self.capacity;
+            self.front = (self.front + self.capacity - 1) & (self.capacity - 1);
             let front = self.front;
             self[front] = item;
             self.len += 1;
@@ -50,8 +54,8 @@ where
 
     pub fn pop_front(&mut self) -> Option<&T> {
         if self.is_empty() == false {
-            let old_front = self.front; 
-            self.front = (self.front + 1) % self.capacity;
+            let old_front = self.front;
+            self.front = (self.front + 1) & (self.capacity - 1);
             self.len -= 1;
             let item_ref = &self[old_front];
             Some(item_ref)
@@ -64,14 +68,14 @@ where
         if self.is_full() == false {
             let rear = self.rear;
             self[rear] = item;
-            self.rear = (self.rear + 1) % self.capacity;
+            self.rear = (self.rear + 1) & (self.capacity - 1);
             self.len += 1;
         }
     }
 
     pub fn pop_rear(&mut self) -> Option<&T> {
         if self.is_empty() == false {
-            let new_rear = (self.rear + self.capacity - 1) % self.capacity;
+            let new_rear = (self.rear + self.capacity - 1) & (self.capacity - 1);
             self.rear = new_rear;
             self.len -= 1;
             let item_ref = &self[new_rear];
@@ -116,7 +120,6 @@ where
     }
 }
 
-
 #[cfg(test)]
 mod tests {
     #[allow(unused_imports)]
@@ -125,7 +128,7 @@ mod tests {
     #[test]
     fn sanity() {
         let mut queue = FixedRingBuffer::new([0; 32], 32);
-        
+
         queue.push_rear(0);
         queue.push_rear(1);
         queue.push_rear(2);
@@ -137,43 +140,29 @@ mod tests {
         );
         assert_eq!(4, queue.len());
 
+        let item = queue.pop_front().map(|&a| a);
+        assert_eq!(Some(0), item);
+        assert_eq!(vec![1, 2, 3], queue.iter().map(|&a| a).collect::<Vec<_>>());
 
         let item = queue.pop_front().map(|&a| a);
-        assert_eq!( Some(0), item  );
-        assert_eq!(
-            vec![1, 2, 3],
-            queue.iter().map(|&a| a).collect::<Vec<_>>()
-        );
-
+        assert_eq!(Some(1), item);
+        assert_eq!(vec![2, 3], queue.iter().map(|&a| a).collect::<Vec<_>>());
 
         let item = queue.pop_front().map(|&a| a);
-        assert_eq!( Some(1), item  );
-        assert_eq!(
-            vec![2, 3],
-            queue.iter().map(|&a| a).collect::<Vec<_>>()
-        );
-
-
-        let item = queue.pop_front().map(|&a| a);
-        assert_eq!( Some(2), item  );
-        assert_eq!(
-            vec![3],
-            queue.iter().map(|&a| a).collect::<Vec<_>>()
-        );
+        assert_eq!(Some(2), item);
+        assert_eq!(vec![3], queue.iter().map(|&a| a).collect::<Vec<_>>());
         assert_eq!(1, queue.len());
 
-
         let item = queue.pop_rear().map(|&a| a);
-        assert_eq!( Some(3), item  );
+        assert_eq!(Some(3), item);
         assert_eq!(
             Vec::<i32>::new(),
             queue.iter().map(|&a| a).collect::<Vec<_>>()
         );
         assert_eq!(0, queue.len());
 
-
         let item = queue.pop_rear().map(|&a| a);
-        assert_eq!( None, item  );
+        assert_eq!(None, item);
         assert_eq!(
             Vec::<i32>::new(),
             queue.iter().map(|&a| a).collect::<Vec<_>>()

@@ -4,7 +4,7 @@ use super::*;
 
 use std::ops::{Index, IndexMut};
 
-#[derive(Serialize, Deserialize,Clone,Copy)]
+#[derive(Serialize, Deserialize, Clone, Copy)]
 pub struct CircularStack<T> {
     data: [T; 4],
     cursor: u32,
@@ -22,8 +22,8 @@ where
             len: 0,
         }
     }
-    
-    pub fn len(&self)->usize{
+
+    pub fn len(&self) -> usize {
         self.len as usize
     }
 
@@ -32,26 +32,25 @@ where
     }
 
     pub fn push(&mut self, item: T) {
-        let len = self.data.len() as u32;
-        let idx = self.cursor&3;
+        let len = self.len() as u32;
+        let idx = self.cursor & 3;
         self[idx] = item;
-        self.cursor = (self.cursor + 1) &3;
-        self.len = (len + 1).min(len);
+        self.cursor = (self.cursor + 1) & 3;
+        self.len = (len + 1).min(4);
     }
-    
+
     pub fn pop(&mut self) -> T {
-        let len = self.data.len() as u32;
+        let len = self.len() as u32;
         self.cursor = ((self.cursor + 4) - 1) & 3;
-        self.len = (len - 1).min(0);
+        self.len = (len as i32 - 1).max(0) as u32;
         let item = self[self.cursor];
         item
     }
 
     /// fetches previously written element
-    pub fn prev(&self, mut offset: u32) -> T {
-        let len = self.data.len() as u32;
-        offset = offset.clamp(1, len-1);
-        let idx = ((self.cursor + len) - offset) & 3;
+    pub fn prev(&self, offset: u32) -> T {
+        let clamped_offset = offset.clamp(0, self.len);
+        let idx = ((self.cursor + 4) - clamped_offset) & 3;
         self[idx]
     }
 }
@@ -102,9 +101,8 @@ mod test {
         assert_eq!(2, queue.prev(1));
         assert_eq!(1, queue.prev(2));
 
-        assert_eq!(2,queue.pop());
-        assert_eq!(1,queue.pop());
-        assert_eq!(0,queue.len());
-
+        assert_eq!(2, queue.pop());
+        assert_eq!(1, queue.pop());
+        assert_eq!(0, queue.len());
     }
 }

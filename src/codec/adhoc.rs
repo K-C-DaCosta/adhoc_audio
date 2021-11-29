@@ -1,8 +1,13 @@
+use crate::math::PseudoRandom;
+
 use super::*;
 use std::{
     collections::VecDeque,
+    io::{Read, Write},
     ops::{Deref, DerefMut},
 };
+
+use bincode;
 
 mod audio_stream;
 pub use audio_stream::*;
@@ -22,11 +27,34 @@ pub enum CodecState {
 /// # Description
 /// A compressed audio format cobbled together to handle audio on the web
 pub struct AdhocCodec {
+    /// # Description
+    /// a list of headers
+    /// ## Comments
+    /// compression is adaptive,every frame has unique information required to decode it    
     frame_header_list: FrameHeaders,
+
+    /// Keeps state of the encoder for each channel
     channel_state_list: Vec<FrameCodec>,
+
+    /// contains 'frames' of audio samples in rice-encoded format
     stream: AudioStream,
+
+    /// a temporary buffer used in encoding step for seperating interleaved stream
     deinterleaved_channel: Vec<f32>,
+
+    /// internally this value is from 0-7
+    compression_level: u32,
+
+    /// used to 'reverse' quantization on decoding step
+    scale: f32,
+
+    /// used to quantize stream on encoding step
+    inv_scale: f32,
+
+    /// random number sequence
+    seq: PseudoRandom,
 }
+
 impl AdhocCodec {
     pub fn new() -> Self {
         Self {
@@ -34,6 +62,10 @@ impl AdhocCodec {
             frame_header_list: FrameHeaders::new(),
             deinterleaved_channel: Vec::new(),
             channel_state_list: Vec::new(),
+            compression_level: 0,
+            scale: 1.0,
+            inv_scale: 1.0,
+            seq: PseudoRandom::new(314),
         }
     }
 
@@ -43,24 +75,92 @@ impl AdhocCodec {
             .resize(num_channels, FrameCodec::new());
         self.stream.set_info(Some(info));
     }
+    /// # Description
+    /// use this to specify compression `level` where level is 0-7, where 0 is no compression while 7 is very lossy
+    pub fn with_compression_level(mut self, mut level: u32) -> Self {
+        level = level.clamp(0, 7);
+        let scale = (1 << level) as f32;
+        self.compression_level = level;
+        self.scale = scale;
+        self.inv_scale = 1.0 / scale;
+        self
+    }
 
-    //switches to decode mode
+    /// # Description
+    /// re-initalizes state, ususally for switching to decoding
     pub fn init(&mut self) {
         self.stream.seek_start();
         self.frame_header_list.reset();
         self.channel_state_list.iter_mut().for_each(|cs| cs.init())
     }
 
+    pub fn save_to<Resource>(&self, res: Resource) -> Option<()>
+    where
+        Resource: Write,
+    {
+        #[derive(Serialize)]
+        struct SlimAdhocCodecRef<'a> {
+            compression_level: u32,
+            frame_header_list: &'a FrameHeaders,
+            stream: &'a AudioStream,
+        }
+
+        let slim = SlimAdhocCodecRef {
+            compression_level: self.compression_level,
+            stream: &self.stream,
+            frame_header_list: &self.frame_header_list,
+        };
+
+        bincode::serialize_into(res, &slim).ok()
+    }
+
+    pub fn load<Resource>(res: Resource) -> Option<Self>
+    where
+        Resource: Read,
+    {
+        #[derive(Deserialize)]
+        struct SlimAdhocCodec {
+            compression_level: u32,
+            frame_header_list: FrameHeaders,
+            stream: AudioStream,
+        }
+
+        bincode::deserialize_from::<_, SlimAdhocCodec>(res)
+            .ok()
+            .and_then(|slim| {
+                let scale = (1 << slim.compression_level) as f32;
+                let info = slim.stream.info()?;
+                let mut adhoc_codec = Self {
+                    compression_level: slim.compression_level,
+                    channel_state_list: (0..info.channels)
+                        .map(|_| FrameCodec::new())
+                        .collect::<Vec<_>>(),
+                    stream: slim.stream,
+                    frame_header_list: slim.frame_header_list,
+                    deinterleaved_channel: Vec::new(),
+                    scale,
+                    inv_scale: 1.0 / scale,
+                    seq: PseudoRandom::new(314),
+                };
+                adhoc_codec.init();
+                Some(adhoc_codec)
+            })
+    }
 
     fn encode(&mut self, interleaved_pcm: &[f32]) {
         let num_channels = self.stream.info().expect("info not set").channels as usize;
         let num_chunks = interleaved_pcm.len() / num_channels;
+        let inv_scale = self.inv_scale;
+
+        //controls the 'strength'/'influence' of dithering
+        const DITHER_AMPLITUDE: f32 = 0.001;
 
         //split borrows
         let channel_list = &mut self.channel_state_list;
         let stream = &mut self.stream;
         let block_info = &mut self.frame_header_list;
         let deinterleaved_channel = &mut self.deinterleaved_channel;
+        let seq = &mut self.seq;
 
         deinterleaved_channel.resize(num_chunks, 0.0);
 
@@ -71,6 +171,17 @@ impl AdhocCodec {
                 deinterleaved_channel[chunk_idx] =
                     interleaved_pcm[(chunk_idx * num_channels) + channel_idx];
             }
+
+            deinterleaved_channel
+                .iter_mut()
+                .zip(seq.triangle())
+                .for_each(|(channel_samples, noise)| {
+                    //dither signal s, before quantization
+                    *channel_samples += noise * DITHER_AMPLITUDE * (1.0 - inv_scale);
+                    //scale sound down
+                    *channel_samples *= inv_scale;
+                });
+
             // println!("{:?}", deinterleaved_channel);
             channel_list[channel_idx].encode_frame(stream, block_info, &deinterleaved_channel);
         }
@@ -121,6 +232,12 @@ impl AdhocCodec {
                 channel_idx += 1;
             }
         }
+
+        //scale up signal
+        for s in pcm_out {
+            *s *= self.scale
+        }
+
         pcm_out_cursor
     }
 }
@@ -128,6 +245,7 @@ impl AdhocCodec {
 impl Streamable for AdhocCodec {
     fn encode(&mut self, samples: &[f32]) -> Option<usize> {
         self.encode(samples);
+
         Some(samples.len())
     }
     fn decode(&mut self, samples: &mut [f32]) -> Option<usize> {
@@ -185,7 +303,6 @@ impl Streamable for AdhocCodec {
                 //make sure cursor is set at the 'start header index'
                 frame_header_list.set_cursor(start_header_index as u32);
 
-
                 //for each frame in the frame-block
                 for offset in 0..channels {
                     let offset = offset as usize;
@@ -194,7 +311,7 @@ impl Streamable for AdhocCodec {
                         .expect("frame fence post");
 
                     //make sure stack history from the header is transferred to state
-                    // 0..3 because sample history is supposed to have 3 samples 
+                    // 0..3 because sample history is supposed to have 3 samples
                     for k in 0..3 {
                         channel_state_list[offset]
                             .sample_history_mut()
@@ -238,17 +355,14 @@ mod test {
 
     #[allow(unused_imports)]
     use crate::codec::wav::WavCodec;
-    
-    #[allow(unused_imports)]
-    use crate::math;
 
     #[allow(unused_imports)]
-    use crate::signal;
+    use crate::math::{self, signal};
 
     #[allow(unused_imports)]
     use std::{
         fs::File,
-        io::{Cursor, Read, Write,SeekFrom},
+        io::{Cursor, Read, SeekFrom, Write},
     };
 
     #[test]
@@ -335,7 +449,6 @@ mod test {
             adhoc_codec.encode(&buffer[0..samps_decoded]);
         }
 
-       
         adhoc_codec.seek(SeekFrom::Start(0));
 
         let mut out_wav = WavCodec::new(StreamInfo::new(44_100, 2));
@@ -348,5 +461,44 @@ mod test {
         out_wav
             .save_to(File::create("./resources/adhoc_folly.wav").unwrap())
             .unwrap();
+
+        adhoc_codec.save_to(File::create("./resources/folly.adhoc").unwrap());
+    }
+
+    #[test]
+    fn re_encode_wav_large() {
+        let mut wav_data =
+            WavCodec::load(File::open("./resources/folly.wav").expect("file not found")).unwrap();
+
+        let mut buffer = [0.0f32; 1024];
+        let mut adhoc_codec = AdhocCodec::new().with_compression_level(7);
+
+        adhoc_codec.set_info(wav_data.info());
+        while let Some(n) = wav_data.decode(&mut buffer) {
+            adhoc_codec.encode(&buffer[0..n]);
+        }
+
+        adhoc_codec.seek(SeekFrom::Start(0));
+        adhoc_codec.save_to(File::create("./resources/folly.adhoc").unwrap());
+
+        //convert compressed audio back to wav so i can listen
+        adhoc_codec.seek(SeekFrom::Start(0));
+        let mut decompressed = WavCodec::new(wav_data.info());
+        while let Some(n) = <AdhocCodec as Streamable>::decode(&mut adhoc_codec, &mut buffer) {
+            for e in &mut buffer{
+                *e*=-1.0;
+            }
+
+
+            decompressed.encode(&buffer[0..n]);
+        }
+
+        decompressed
+            .save_to(File::create("./resources/folly_adhoc.wav").unwrap())
+            .unwrap();
+
+        // let _adhoc =
+        //     AdhocCodec::load(File::open("./resources/folly.adhoc").expect("folly.adhoc missing"))
+        //         .expect("adhoc deserialize failed");
     }
 }

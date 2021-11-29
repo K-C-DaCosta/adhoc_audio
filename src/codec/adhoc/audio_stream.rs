@@ -1,4 +1,8 @@
+use serde::{Deserialize, Serialize};
+
 use super::*;
+
+#[derive(Deserialize,Serialize)]
 pub struct AudioStream {
     info: Option<StreamInfo>,
     stream: BitStream,

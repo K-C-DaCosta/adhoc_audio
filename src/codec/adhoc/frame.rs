@@ -1,7 +1,10 @@
+use serde::{Deserialize, Serialize};
+
 use crate::collections::BitVec;
 
 use super::*;
 
+#[derive(Serialize,Deserialize)]
 pub struct FrameHeader {
     pub exponent: u8,
     pub size: u16,
@@ -12,6 +15,7 @@ pub struct FrameHeader {
 
 /// Encoder compresses audio in 'blocks'
 /// this struct stores compact infomation about every block in the stream
+#[derive(Serialize,Deserialize)]
 pub struct FrameHeaders {
     /// its stores `log_2(divisor)`, where `divisor =  2^k`, for some k
     divisor_exp_list: NibbleList,
@@ -33,6 +37,7 @@ impl FrameHeaders {
             header_cursor: 0,
         }
     }
+
 
     pub fn push(&mut self, header: FrameHeader) {
         let FrameHeader {

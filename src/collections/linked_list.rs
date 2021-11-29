@@ -140,6 +140,7 @@ impl<T> LinkedList<T> {
             reused_node
         }
     }
+
     pub fn free(&mut self, node: Ptr) -> Option<T> {
         self[node].children = [NULL, self.pool];
         self.pool = node;
@@ -157,6 +158,7 @@ impl<T> LinkedList<T> {
     pub fn iter<'a>(&'a self) -> impl Iterator<Item = &'a T> {
         LinkedListIterator::new(self).map(move |node| self[node].data.as_ref().unwrap())
     }
+    
     pub fn iter_mut(&mut self) -> impl Iterator<Item = &mut T> {
         let self_ref: &mut Self = unsafe { std::mem::transmute(self as *mut Self) };
         LinkedListIterator::new(self).map(move |node| {

@@ -1,5 +1,8 @@
+use serde::{Deserialize, Serialize};
+
 /// # Description
 /// a vector of bits
+#[derive(Serialize,Deserialize)]
 pub struct BitVec {
     binary: Vec<u64>,
     bit_cursor: u128,
@@ -41,7 +44,7 @@ impl BitVec {
         if chunk_idx >= self.binary.len() {
             self.binary.push(0);
         }
-
+        self.binary[chunk_idx] &= !(1 << chunk_bit_idx);
         self.binary[chunk_idx] |= bit << chunk_bit_idx;
         self.offset_cursor(1);
     }

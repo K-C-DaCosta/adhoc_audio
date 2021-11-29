@@ -1,3 +1,5 @@
 /target
 /recorder_output
-/resources
+/resources/*
+!/resources/taunt.wav
+!/resources/.stub

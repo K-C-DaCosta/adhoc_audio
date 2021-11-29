@@ -60,7 +60,18 @@ pub struct BitStream {
 impl BitStream {
     pub fn new() -> Self {
         Self {
+            //allocate 4 MB upfront, because most files will be about this size
             binary: Vec::new(),
+            bit_cursor: 0,
+            capacity: 0,
+        }
+    }
+    
+    /// allocates `mega_bytes` upfront  
+    pub fn with_capacity_in_megabytes(mega_bytes: usize) -> Self {
+        let required_chunks = (mega_bytes * (8 * 1_000_000)) / 128;
+        Self {
+            binary: Vec::with_capacity(required_chunks),
             bit_cursor: 0,
             capacity: 0,
         }
@@ -161,7 +172,7 @@ impl BitStream {
         let extracted_bit = self.binary[chunk_idx] >> bit_idx;
         extracted_bit & 1
     }
-    
+
     /// # Description
     /// read `bit_count` bits into the stream where (`bit_count` <= 128)
     pub fn read_bits(&mut self, bit_count: usize) -> u128 {
@@ -290,50 +301,29 @@ impl BitStream {
 
         //read zero(expected)
         let mut quotient = 0;
-        let mut _temp = 0;
+
+        #[allow(unused_assignments)]
+        let mut bit_chunk = 0;
 
         while {
-            _temp = self.peek::<u128>();
-            _temp.count_zeros() == 0
+            bit_chunk = self.peek::<u128>();
+            bit_chunk.count_zeros() == 0
         } {
-            self.read::<u128>();
+            self.offset_bit_cursor(128);
             quotient += 128;
         }
-        while {
-            _temp = self.peek::<u64>();
-            _temp.count_zeros() == 0
-        } {
-            self.read::<u64>();
-            quotient += 64;
-        }
-        while {
-            _temp = self.peek::<u32>();
-            _temp.count_zeros() == 0
-        } {
-            self.read::<u32>();
-            quotient += 32;
-        }
 
-        while {
-            _temp = self.peek::<u16>();
-            _temp.count_zeros() == 0
-        } {
-            self.read::<u16>();
-            quotient += 16;
+        // 128-bit chunk that was peeked cointains zero so count
+        // how many 1 bits are in the chunk and offset accordingly
+        let mut zero_bit_pos = 0;
+        while zero_bit_pos < 128 && ((bit_chunk & 1) != 0) {
+            zero_bit_pos += 1;
+            bit_chunk >>= 1;
         }
+        self.offset_bit_cursor(zero_bit_pos + 1);
+        quotient += zero_bit_pos.max(0) as i16;
 
-        while {
-            _temp = self.peek::<u8>();
-            _temp.count_zeros() == 0
-        } {
-            self.read::<u8>();
-            quotient += 8;
-        }
-        while self.read_bit() != 0 {
-            quotient += 1;
-        }
-
-        //read
+        // read
         let remainder = self.read_bits(remainder_size_in_bits as usize) as i16;
         let unsigned_val = divisor * quotient + remainder;
         unsigned_val * (-sign_bit) + unsigned_val * (1 - sign_bit)

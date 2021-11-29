@@ -2,10 +2,11 @@ use super::{
     collections::{BitStream, CircularStack, NibbleList},
     math::FixedParabola,
 };
-pub use std::io::{SeekFrom,Seek};
+pub use std::io::{Seek, SeekFrom};
 
 pub mod adhoc;
 pub use adhoc::*;
+use serde::{Deserialize, Serialize};
 
 pub mod wav;
 
@@ -23,7 +24,7 @@ fn truncate_sample(samp: f32) -> i16 {
     (samp.clamp(-1.0, 1.0) * (i16::MAX as f32)) as i16
 }
 
-#[derive(Copy, Clone, Default)]
+#[derive(Copy, Clone, Default, Serialize, Deserialize)]
 pub struct StreamInfo {
     pub sample_rate: u32,
     pub channels: u32,
@@ -35,8 +36,18 @@ impl StreamInfo {
             channels,
         }
     }
+
     pub fn channels(&self) -> usize {
         self.channels as usize
+    }
+
+    pub fn frequency(&self) -> usize {
+        self.sample_rate as usize
+    }
+
+    pub fn as_bytes(&self) -> &[u8] {
+        let data = self as *const Self as *const u8;
+        unsafe { std::slice::from_raw_parts(data, std::mem::size_of::<StreamInfo>()) }
     }
 }
 
