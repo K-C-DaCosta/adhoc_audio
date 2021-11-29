@@ -1,5 +1,6 @@
 # Adhoc Audio
-Audio compression written in pure rust. **Doesn't** link to any bindings. 
+Audio compression written in pure rust. 
+**It Doesn't** link to any bindings so its buildable for wasm32-unknown-unknown. 
 
 ## What is this? 
 Its an audio codec I created on the fly for compressing audio.

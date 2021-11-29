@@ -97,7 +97,7 @@ impl WavCodec {
             short_cursor: 0,
         }
     }
-    pub fn info(&self)->StreamInfo{
+    pub fn info(&self) -> StreamInfo {
         self.info
     }
 
@@ -173,8 +173,8 @@ impl WavCodec {
             header_slice[3],
         ]);
 
-        if header.bits_per_sample != 16 {
-            return Err("formats not 16 bits per sample isn't supported");
+        if header.bits_per_sample != 16 && header.bits_per_sample != 8 {
+            return Err("invalid bits per sample, either 16 or 8 bits per sample is supported ");
         }
         if header.audio_format != 1 {
             return Err("formats other than PCM liner isn't supported");
@@ -191,6 +191,19 @@ impl WavCodec {
         wav_res
             .read_to_end(&mut pcm)
             .map_err(|_| "failed to read to end")?;
+
+        if header.bits_per_sample == 8 {
+            //convert 8bit stream to 16bit
+            let len = pcm.len();
+            pcm.resize(pcm.len() * 2, 0);
+            for k in (0..len).rev() {
+                let sample = pcm[k];
+                let scaled_sample = (i16::MAX as f32) * ((sample as f32 / 255.0) * 2.0 - 1.0);
+                let sample = scaled_sample as i16;
+                pcm[2 * k + 0] = ((sample >> 0) & 0xff) as u8;
+                pcm[2 * k + 1] = ((sample >> 8) & 0xff) as u8;
+            }
+        }
 
         // println!("header:\n{}\n", header);
 
@@ -211,7 +224,7 @@ impl WavCodec {
     fn get_pcm(pcm: &Vec<u8>) -> &[i16] {
         unsafe { slice::from_raw_parts(pcm.as_ptr() as *const i16, pcm.len() / 2) }
     }
-    
+
     #[allow(dead_code)]
     fn get_pcm_mut(pcm: &mut Vec<u8>) -> &mut [i16] {
         unsafe { slice::from_raw_parts_mut(pcm.as_ptr() as *mut i16, pcm.len() / 2) }
@@ -330,13 +343,13 @@ mod test {
 
     #[test]
     fn parse_wav_then_re_export_by_encode_then_copy_to_disk() {
-        let file_pointer = fs::File::open("./resources/folly.wav").expect("misisng file");
+        let file_pointer = fs::File::open("./resources/taunt.wav").expect("misisng file");
         let mut wav_codec = WavCodec::load(file_pointer).unwrap();
-        let mut new_wav = WavCodec::new(StreamInfo::new(44100, 2));
+        let mut new_wav = WavCodec::new(wav_codec.info());
         let mut buffer = [0.0; 1024];
 
         //seek 1min into the track
-        wav_codec.seek(SeekFrom::Start(60_000));
+        // wav_codec.seek(SeekFrom::Start(60_000));
 
         //start writing from 1minute mark
         while let Some(samples_read) = wav_codec.decode(&mut buffer) {
@@ -350,7 +363,7 @@ mod test {
         // }
 
         let new_file =
-            fs::File::create("./resources/folly_re_encoded.wav").expect("failed to create file");
+            fs::File::create("./resources/taunt_copy.wav").expect("failed to create file");
         new_wav.save_to(new_file).expect("failed to write");
     }
 }
