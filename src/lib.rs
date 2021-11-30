@@ -46,6 +46,5 @@
 pub mod codec;
 mod collections;
 mod math;
-
-pub use codec::{adhoc::AdhocCodec, wav::WavCodec, StreamInfo};
+pub use codec::{adhoc::AdhocCodec, wav::WavCodec, StreamInfo, Streamable};
 pub use std::io::SeekFrom;

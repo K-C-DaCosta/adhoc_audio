@@ -26,13 +26,14 @@ use std::fs::File;
 fn main() {
     println!("compressing file example..");
 
+
     //set up a buffer for reading/writing samples
     let mut samples = [0.0; 1024];
 
     //open wav file
     let mut wav_reader = WavCodec::load(File::open("./resources/taunt.wav")
         .unwrap()).unwrap();
-
+    
     let mut adhoc = AdhocCodec::new()
         // level 0 means no quantization ,so its basically lossless at level 0
         // levels 1-10 means quantization so compression is better but 
