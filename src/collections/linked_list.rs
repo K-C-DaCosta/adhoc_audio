@@ -22,7 +22,7 @@ pub struct LinkedList<T> {
     pool: Ptr,
     len: u32,
 }
-
+#[allow(dead_code)]
 impl<T> LinkedList<T> {
     pub fn new() -> Self {
         Self {

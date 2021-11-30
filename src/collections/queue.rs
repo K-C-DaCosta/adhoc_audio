@@ -12,6 +12,7 @@ pub struct FixedRingBuffer<BACKING> {
     capacity: u32,
 }
 
+#[allow(dead_code)]
 impl<BACKING> FixedRingBuffer<BACKING> {
     pub fn new(backing: BACKING, capacity: u32) -> Self {
         if capacity.count_ones() != 1 {
@@ -28,6 +29,7 @@ impl<BACKING> FixedRingBuffer<BACKING> {
     }
 }
 
+#[allow(dead_code)]
 impl<T, BACKING> FixedRingBuffer<BACKING>
 where
     BACKING: Index<usize, Output = T> + IndexMut<usize>,

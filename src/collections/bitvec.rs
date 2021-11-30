@@ -8,6 +8,7 @@ pub struct BitVec {
     bit_cursor: u128,
 }
 
+#[allow(dead_code)]
 impl BitVec {
     pub fn new() -> Self {
         Self {

@@ -5,6 +5,8 @@ pub struct NibbleList {
     data: Vec<u8>,
     nibble_count: u32,
 }
+
+#[allow(dead_code)]
 impl NibbleList {
     pub fn new() -> Self {
         Self {

@@ -12,6 +12,8 @@ where
     capacity: u32,
 }
 
+
+#[allow(dead_code)]
 impl<K, V> LruCache<K, V>
 where
     K: Eq + Hash + Clone + Serialize,
