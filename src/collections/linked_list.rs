@@ -238,11 +238,11 @@ mod tests {
         println!("front:{:?}", ll.get(ll.front()).and_then(|n| n.data()));
         println!("rear:{:?}", ll.get(ll.rear()).and_then(|n| n.data()));
 
-        let serialized = serde_json::to_string(&ll).unwrap();
-        println!("json:{}", serialized);
+        // let serialized = serde_json::to_string(&ll).unwrap();
+        // println!("json:{}", serialized);
 
-        let json_ll: LinkedList<i32> = serde_json::from_str(&serialized).unwrap();
-        println!("\n\njson LL:\n\n{:?}", json_ll);
+        // let json_ll: LinkedList<i32> = serde_json::from_str(&serialized).unwrap();
+        // println!("\n\njson LL:\n\n{:?}", json_ll);
 
         let binary_ll = bincode::serialize(&ll).unwrap();
         let bincode_ll: LinkedList<i32> = bincode::deserialize(binary_ll.as_slice()).unwrap();
