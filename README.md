@@ -20,15 +20,24 @@ Compression savings seems to be anywhere from 30%-70% but i haven't dont extensi
 
 ## Encode Example
 ```rust
+use adhoc_audio::{codec::Streamable, AdhocCodec, WavCodec};
+use std::fs::File;
+
+fn main() {
+    println!("compressing file example..");
+    
     //set up a buffer for reading/writing samples
     let mut samples = [0.0; 1024];
 
     //open wav file
-    let mut wav_reader = WavCodec::load(File::open("./resources/taunt.wav").unwrap()).unwrap();
+    let mut wav_reader = WavCodec::load(File::open("./resources/taunt.wav")
+        .unwrap()).unwrap();
 
     let mut adhoc = AdhocCodec::new()
         .with_compression_level(7)
-        //AdhocCodec::with_info(.. ) MUST BE CALLED before calling encode/decode when you are creating a new instance of AdhocCodec
+        // AdhocCodec::with_info(.. ) MUST BE CALLED 
+        // before calling encode/decode when you are 
+        // creating a new instance of AdhocCodec
         .with_info(wav_reader.info());
 
     //'decode' wav stream bit-by-bit
@@ -43,6 +52,9 @@ Compression savings seems to be anywhere from 30%-70% but i haven't dont extensi
     adhoc
         .save_to(File::create("./resources/taunt.adhoc").unwrap())
         .unwrap();
+
+    println!("taunt.adhoc written to: ./resources");
+}
 ```
 
 ## Decode 
