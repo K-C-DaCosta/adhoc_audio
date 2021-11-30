@@ -27,9 +27,9 @@ fn truncate_sample(samp: f32) -> i16 {
 #[derive(Copy, Clone, Default, Serialize, Deserialize)]
 pub struct StreamInfo {
     /// `sample_rate` is in Hz so typically you set this to something like: `44_100` or `48_000`
-    pub sample_rate: u32,
+    sample_rate: u32,
     /// number of channels in your stream
-    pub channels: u32,
+    channels: u32,
 }
 impl StreamInfo {
     pub fn new(sample_rate: u32, channels: u32) -> Self {
@@ -63,7 +63,7 @@ pub trait Streamable {
     fn encode(&mut self, samples: &[f32]) -> Option<usize>;
 
     /// # Description
-    /// Decodes the stream and write it out into `samples`
+    /// Decodes part of the stream and writes it out into the `samples` buffer
     /// ## Returns
     /// Number of samples decoded
     fn decode(&mut self, samples: &mut [f32]) -> Option<usize>;

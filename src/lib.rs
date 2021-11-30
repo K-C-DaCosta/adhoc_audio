@@ -41,10 +41,52 @@
 //!     println!("taunt.adhoc written to: ./resources");
 //! }
 //! ```
+//! 
+//! 
+//! # Example - decoding compressed audio
+//! 
+//! ## Decode Example
+//! ```rust
+//!use adhoc_audio::{codec::Streamable, AdhocCodec, WavCodec};
+//!use std::fs::File;
+//!
+//!fn main() {
+//!    println!("decompressing file from 'compress' example...");
+//!
+//!    //set up a buffer for reading/writing samples
+//!    let mut samples = [0.0; 1024];
+//!
+//!    //open wav file
+//!    let mut adhoc = AdhocCodec::load(
+//!        File::open("./resources/taunt.adhoc").expect("run example 'compress' before this one"),
+//!    )
+//!    .unwrap();
+//!    
+//!    let mut wav_writer = WavCodec::new(adhoc.info());
+//!
+//!    //decode adhoc stream a chunk of samples at a time
+//!    while let Some(samples_read) = adhoc.decode(&mut samples) {
+//!        //encode wav data bit-by-bit
+//!        //memory is allocated as needed
+//!        wav_writer.encode(&samples[0..samples_read]);
+//!    }
+//!
+//!    //write compressed audio back to disk
+//!    wav_writer
+//!        .save_to(File::create("./resources/taunt_decompressed.wav").unwrap())
+//!        .unwrap();
+//!
+//!    println!("taunt.adhoc written to: ./resources");
+//!}
+//!```
+//! 
+//! 
+//! 
 
 /// all the audio stuff is in here 
 pub mod codec;
 mod collections;
 mod math;
+
 pub use codec::{adhoc::AdhocCodec, wav::WavCodec, StreamInfo, Streamable};
 pub use std::io::SeekFrom;
