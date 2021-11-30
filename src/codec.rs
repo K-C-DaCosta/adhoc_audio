@@ -21,12 +21,14 @@ where
 }
 
 fn truncate_sample(samp: f32) -> i16 {
-    (samp.clamp(-1.0, 1.0) * (i16::MAX as f32)) as i16
+    (samp.clamp(-1.0, 1.0) * ((i16::MAX) as f32)) as i16
 }
 
 #[derive(Copy, Clone, Default, Serialize, Deserialize)]
 pub struct StreamInfo {
+    /// `sample_rate` is in Hz so typically you set this to something like: `44_100` or `48_000`
     pub sample_rate: u32,
+    /// number of channels in your stream
     pub channels: u32,
 }
 impl StreamInfo {

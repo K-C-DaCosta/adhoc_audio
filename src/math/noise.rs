@@ -99,10 +99,11 @@ impl<const N: usize> fmt::Display for NoiseDistribution<f32, N> {
 
 #[cfg(test)]
 mod tests {
+    #[allow(unused_imports)]
     use super::*;
 
     #[test]
-    #[cfg(feature = "desktop")]
+    #[cfg(not(target_family = "wasm"))]
     pub fn sanity() {
         println!("\n\nuniform histogram:\n");
         println!("{}", NoiseDistribution::<f32, 100_000>::uniform());

@@ -7,7 +7,10 @@ use adhoc_audio::{
 };
 
 fn main() {
+    #[cfg(feature = "cli")]
+    {
 
 
-
+        
+    }
 }

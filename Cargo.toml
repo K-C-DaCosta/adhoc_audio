@@ -2,13 +2,13 @@
 name = "adhoc_audio"
 version = "0.1.0"
 edition = "2021"
-authors = ["k. collin dacosta <khadeem.dacosta@gmail.com>"]
+authors = ["k. Collin DaCosta <khadeem.dacosta@gmail.com>"]
 
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 [features]
 default = []
-desktop = ["clap", "rand"]
+cli = ["clap", "rand"]
 
 [dependencies]
 serde = { version = "*", features = ['derive'] }

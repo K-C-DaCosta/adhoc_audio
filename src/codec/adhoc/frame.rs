@@ -4,7 +4,7 @@ use crate::collections::BitVec;
 
 use super::*;
 
-#[derive(Serialize,Deserialize)]
+#[derive(Serialize, Deserialize)]
 pub struct FrameHeader {
     pub exponent: u8,
     pub size: u16,
@@ -15,7 +15,7 @@ pub struct FrameHeader {
 
 /// Encoder compresses audio in 'blocks'
 /// this struct stores compact infomation about every block in the stream
-#[derive(Serialize,Deserialize)]
+#[derive(Serialize, Deserialize)]
 pub struct FrameHeaders {
     /// its stores `log_2(divisor)`, where `divisor =  2^k`, for some k
     divisor_exp_list: NibbleList,
@@ -37,7 +37,6 @@ impl FrameHeaders {
             header_cursor: 0,
         }
     }
-
 
     pub fn push(&mut self, header: FrameHeader) {
         let FrameHeader {
@@ -281,7 +280,11 @@ impl FrameCodec {
                         ];
                         parabola.compute_coefs();
                         let predicted = truncate_sample(parabola.eval(3.0));
-                        let current = entropy + predicted;
+
+                        //casted to i32 to avoid overflow issues
+                        let current = (entropy as i32 + predicted as i32)
+                            .clamp(i16::MIN as i32, i16::MAX as i32)
+                            as i16;
 
                         let decoded_sample = normalize_sample(current).clamp(-1.0, 1.0);
                         sample_buffer.push_back(decoded_sample);
@@ -304,7 +307,12 @@ impl FrameCodec {
                         ];
                         parabola.compute_coefs();
                         let predicted = truncate_sample(parabola.eval(3.0));
-                        let current = entropy + predicted;
+
+                        //casted to i32 to avoid overflow issues
+                        let current = (entropy as i32 + predicted as i32)
+                            .clamp(i16::MIN as i32, i16::MAX as i32)
+                            as i16;
+
                         let decoded_sample = normalize_sample(current).clamp(-1.0, 1.0);
                         sample_buffer.push_back(decoded_sample);
                         sample_history.push(current);

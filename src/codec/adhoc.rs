@@ -69,16 +69,31 @@ impl AdhocCodec {
         }
     }
 
+    pub fn with_info(mut self, info: StreamInfo) -> Self {
+        let num_channels = info.channels as usize;
+        self.channel_state_list
+            .resize(num_channels, FrameCodec::new());
+        self.stream.set_info(Some(info));
+        self
+    }
+
+    pub fn info(&self) -> StreamInfo {
+        self.stream
+            .info()
+            .expect("info not initalized, call set_info/with_info before decoding")
+    }
+    
     pub fn set_info(&mut self, info: StreamInfo) {
         let num_channels = info.channels as usize;
         self.channel_state_list
             .resize(num_channels, FrameCodec::new());
         self.stream.set_info(Some(info));
     }
+
     /// # Description
-    /// use this to specify compression `level` where level is 0-7, where 0 is no compression while 7 is very lossy
+    /// use this to specify compression `level` where level is 0-10, where 0 is little to no loss in quality while 10 is very,very lossy
     pub fn with_compression_level(mut self, mut level: u32) -> Self {
-        level = level.clamp(0, 7);
+        level = level.clamp(0, 10);
         let scale = (1 << level) as f32;
         self.compression_level = level;
         self.scale = scale;
@@ -468,10 +483,10 @@ mod test {
     #[test]
     fn re_encode_wav_large() {
         let mut wav_data =
-            WavCodec::load(File::open("./resources/folly.wav").expect("file not found")).unwrap();
+            WavCodec::load(File::open("./resources/taunt.wav").expect("file not found")).unwrap();
 
         let mut buffer = [0.0f32; 1024];
-        let mut adhoc_codec = AdhocCodec::new().with_compression_level(7);
+        let mut adhoc_codec = AdhocCodec::new().with_compression_level(4);
 
         adhoc_codec.set_info(wav_data.info());
         while let Some(n) = wav_data.decode(&mut buffer) {
@@ -479,22 +494,21 @@ mod test {
         }
 
         adhoc_codec.seek(SeekFrom::Start(0));
-        adhoc_codec.save_to(File::create("./resources/folly.adhoc").unwrap());
+        adhoc_codec.save_to(File::create("./resources/taunt.adhoc").unwrap());
 
         //convert compressed audio back to wav so i can listen
         adhoc_codec.seek(SeekFrom::Start(0));
         let mut decompressed = WavCodec::new(wav_data.info());
         while let Some(n) = <AdhocCodec as Streamable>::decode(&mut adhoc_codec, &mut buffer) {
-            for e in &mut buffer{
-                *e*=-1.0;
+            for e in &mut buffer {
+                *e *= -1.0;
             }
-
 
             decompressed.encode(&buffer[0..n]);
         }
 
         decompressed
-            .save_to(File::create("./resources/folly_adhoc.wav").unwrap())
+            .save_to(File::create("./resources/taunt_adhoc.wav").unwrap())
             .unwrap();
 
         // let _adhoc =

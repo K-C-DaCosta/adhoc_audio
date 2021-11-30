@@ -97,6 +97,7 @@ impl WavCodec {
             short_cursor: 0,
         }
     }
+    
     pub fn info(&self) -> StreamInfo {
         self.info
     }
@@ -198,7 +199,8 @@ impl WavCodec {
             pcm.resize(pcm.len() * 2, 0);
             for k in (0..len).rev() {
                 let sample = pcm[k];
-                let scaled_sample = (i16::MAX as f32) * ((sample as f32 / 255.0) * 2.0 - 1.0);
+                let scaled_sample = ((sample as f32 / 255.0) * 2.0 - 1.0).clamp(-1.0, 1.0)
+                    * ((i16::MAX - 1) as f32);
                 let sample = scaled_sample as i16;
                 pcm[2 * k + 0] = ((sample >> 0) & 0xff) as u8;
                 pcm[2 * k + 1] = ((sample >> 8) & 0xff) as u8;
@@ -262,17 +264,22 @@ impl Streamable for WavCodec {
     fn decode(&mut self, out: &mut [f32]) -> Option<usize> {
         let mut out_cursor = 0;
 
+        let num_channels = self.info().channels();
         let stream_length = self.num_samples() as u64;
         let cursor = &mut self.short_cursor;
         let samples_list = Self::get_pcm(&self.pcm);
 
-        while *cursor < stream_length && out_cursor < out.len() {
+        //makes sure we can't write partial PCM 'blocks'
+        let valid_length = (out.len()/num_channels)*num_channels;
+
+        while *cursor < stream_length && out_cursor < valid_length {
             let sample_i16 = samples_list[*cursor as usize];
             let normalized_sample = normalize_sample(sample_i16);
             out[out_cursor] = normalized_sample;
             *cursor += 1;
             out_cursor += 1;
         }
+
         (out_cursor > 0).then(|| out_cursor)
     }
 
