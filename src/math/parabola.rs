@@ -1,3 +1,4 @@
+#![allow(dead_code)]
 
 /// A parabola sampled on the points: \
 ///  ( 0 , `f[0]` ) , ( 1 , `f[1]` ), ( 2, `f[2]` )

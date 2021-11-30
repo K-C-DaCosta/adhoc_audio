@@ -7,7 +7,7 @@ pub use signal::*;
 pub use parabola::*; 
 pub use noise::*; 
 
-
+#[allow(dead_code)]
 pub fn compute_mse(a: &[f32], b: &[f32]) -> f32 {
     let n = a.len().min(b.len()) as f32;
     a.iter()

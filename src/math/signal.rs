@@ -1,3 +1,5 @@
+#![allow(dead_code)]
+
 pub fn gaussian_filter<const N:usize>(sigma:f32,r:f32)->[f32;N]{
     let mut result = [0f32;N];
     let coef = 1.0/( sigma *  (2.*3.141f32).sqrt()  );

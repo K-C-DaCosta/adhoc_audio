@@ -60,6 +60,8 @@ pub struct Node<T, const N: usize> {
     data: Option<T>,
     children: [Ptr; N],
 }
+
+#[allow(dead_code)]
 impl<T, const N: usize> Node<T, N> {
     pub fn new() -> Self {
         Self {
