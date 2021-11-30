@@ -10,7 +10,7 @@ I am by no means a compression expert so don't expect much from this.
 The need arose to compress microphone data coming from the WEBAUDIO api during the development of a WASM application I was writing. To simplify the process of compiling the project, I needed the  encoder to be written in *pure rust*. AFAIK, there are a few pure rust audio **decoders** for things like VORBIS(lewton) ,MP3(puremp3) etc but most of those crates do not support **encoding**. 
 
 ## Performance 
-Probably not very fast but I haven't really tested this. Should be real-time though. And I will definitely make optimizations if I can't meet my speed requirements.
+Probably not very fast but I haven't really tested this. The encoding/decoding algorithm is O(N) so it should be fast enough. And I will definitely make optimizations if I can't meet my speed requirements. the `Vec` implementation does allocation, so there should be log(N) allocations. 
 
 ## Compression
 Compression savings seems to be anywhere from 20%-70% but i haven't dont extensive testing to say concretely.  The codec is not lossy, however, it does quantize the audio on higher "compression-levels" to make significant space savings. Quantization doesn't effect audio quality too badly, I was pretty suprised at that discovery.  
