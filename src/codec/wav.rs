@@ -81,6 +81,8 @@ impl RawWavHeader {
     }
 }
 
+/// # Description
+/// A utility for reading/writing WAVE streams
 pub struct WavCodec {
     info: StreamInfo,
     /// PCM data in bytes (internally it is i16 )
