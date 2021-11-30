@@ -82,7 +82,7 @@ impl AdhocCodec {
             .info()
             .expect("info not initalized, call set_info/with_info before decoding")
     }
-    
+
     pub fn set_info(&mut self, info: StreamInfo) {
         let num_channels = info.channels as usize;
         self.channel_state_list
@@ -450,38 +450,9 @@ mod test {
             assert_eq!(close_enough, true, "accuracy threshold not met");
         }
     }
-
+    
     #[test]
-    fn re_encode_wav() {
-        let mut wav_data =
-            WavCodec::load(File::open("./resources/folly.wav").expect("file not found")).unwrap();
-
-        let mut buffer = [0.0f32; 1024];
-        let mut adhoc_codec = AdhocCodec::new();
-
-        adhoc_codec.set_info(StreamInfo::new(44_100, 2));
-        while let Some(samps_decoded) = wav_data.decode(&mut buffer) {
-            adhoc_codec.encode(&buffer[0..samps_decoded]);
-        }
-
-        adhoc_codec.seek(SeekFrom::Start(0));
-
-        let mut out_wav = WavCodec::new(StreamInfo::new(44_100, 2));
-        while let Some(samps_decoded) =
-            <AdhocCodec as Streamable>::decode(&mut adhoc_codec, &mut buffer)
-        {
-            out_wav.encode(&buffer[0..samps_decoded]);
-        }
-
-        out_wav
-            .save_to(File::create("./resources/adhoc_folly.wav").unwrap())
-            .unwrap();
-
-        adhoc_codec.save_to(File::create("./resources/folly.adhoc").unwrap());
-    }
-
-    #[test]
-    fn re_encode_wav_large() {
+    fn re_encode() {
         let mut wav_data =
             WavCodec::load(File::open("./resources/taunt.wav").expect("file not found")).unwrap();
 

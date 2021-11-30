@@ -97,7 +97,7 @@ impl WavCodec {
             short_cursor: 0,
         }
     }
-    
+
     pub fn info(&self) -> StreamInfo {
         self.info
     }
@@ -322,16 +322,16 @@ mod test {
 
     #[test]
     fn parse_wav_then_re_export_copy_to_disk() {
-        let file_pointer = fs::File::open("./resources/folly.wav").expect("misisng file");
+        let file_pointer = fs::File::open("./resources/taunt.wav").expect("misisng file");
         let wav_codec = WavCodec::load(file_pointer).unwrap();
         let new_file =
-            fs::File::create("./resources/folly_out.wav").expect("failed to create file");
+            fs::File::create("./resources/taunt_out.wav").expect("failed to create file");
         wav_codec.save_to(new_file).expect("failed to write");
     }
 
     #[test]
     fn parse_wav_then_re_export_to_main_memory() {
-        let mut file_pointer = fs::File::open("./resources/folly.wav").expect("misisng file");
+        let mut file_pointer = fs::File::open("./resources/taunt.wav").expect("misisng file");
         //write the wav file into the wav_binary buffer
         let mut wav_binary = Vec::new();
         file_pointer
