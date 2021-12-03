@@ -294,7 +294,7 @@ impl Streamable for AdhocCodec {
     fn info(&self) -> StreamInfo {
         self.info()
     }
-    
+
     fn filesize_upperbound(&self) ->u64 {
         self.filesize_upperbound()
     }
@@ -315,6 +315,14 @@ impl Streamable for AdhocCodec {
         let frequency_in_millis = info.sample_rate as f32 / 1000.0;
 
         self.init();
+
+        if let SeekFrom::Start(0) = dt{
+            // this will skip the process of decoding the frame 
+            // so you can call encode(..) if you want to reuse data that has been 
+            // previously allocated 
+            return; 
+        }
+
 
         let frame_header_list = &mut self.frame_header_list;
         let channel_state_list = &mut self.channel_state_list;
