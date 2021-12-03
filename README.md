@@ -3,19 +3,22 @@ Audio compression written in pure rust.
 **It Doesn't** link to any bindings so its buildable for wasm32-unknown-unknown. 
 
 ## What is this? 
-Its an audio codec I cobbled together for compressing audio. 
-I am by no means a compression expert so don't expect much from this.
+Its a collection of audio codecs I'm cobbling together to compress audio. 
+I'm currently using it to: 
+- compress microphone data on client's browser (using this repo compiled to wasm)
+- send data to server (POST request multipart)
+- re-encode compressed data to a standard format (here i'll use rust bindings to libavcodec or something)
+
+Currently, there's only one codec that actually compresses audio [`AdhocCodec`] and a WAVE Reader/Writer Utility I wrote [`WavCodec`]. 
 
 ## Why?
-The need arose to compress microphone data coming from the WEBAUDIO api during the development of a WASM application I was writing. To simplify the process of compiling the project, I needed the  encoder to be written in *pure rust*. AFAIK, there are a few pure rust audio **decoders** for things like VORBIS(lewton) ,MP3(puremp3) etc but most of those crates do not support **encoding**. 
+The need arose to compress microphone data coming from the WEBAUDIO api during the development of a WASM application I was writing. A **pure rust** solution is needed to keep the build steps of the project simple. AFAIK, there are a few pure rust audio **decoders** for things like VORBIS(lewton) ,MP3(puremp3) etc but most of those crates do not support **encoding**. 
 
 ## Performance 
 Probably not very fast but I haven't really tested this. The encoding/decoding algorithm is O(N) so it should be fast enough. And I will definitely make optimizations if I can't meet my speed requirements. the `Vec` implementation does allocation, so there should be log(N) allocations. 
 
 ## Compression
-Compression savings seems to be anywhere from 20%-70% but i haven't dont extensive testing to say concretely.  The codec is not lossy, however, it does quantize the audio on higher "compression-levels" to make significant space savings. Quantization doesn't effect audio quality too badly, I was pretty suprised at that discovery.  
-
-
+Compression savings seems to be anywhere from 20%-70% but I haven't done extensive testing to say concretely.  The codec is not lossy, however, it does quantize the audio on higher "compression-levels" to make significant space savings. Quantization doesn't effect audio quality too badly, I was pretty suprised at that discovery.  
 
 
 ## Encode Example

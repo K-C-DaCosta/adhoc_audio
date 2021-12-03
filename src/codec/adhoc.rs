@@ -78,11 +78,7 @@ impl AdhocCodec {
         self
     }
 
-    fn info(&self) -> StreamInfo {
-        self.stream
-            .info()
-            .expect("info not initalized, call set_info/with_info before decoding")
-    }
+
 
     pub fn set_info(&mut self, info: StreamInfo) {
         let num_channels = info.channels as usize;
@@ -90,21 +86,40 @@ impl AdhocCodec {
             .resize(num_channels, FrameCodec::new());
         self.stream.set_info(Some(info));
     }
-    
-    /// # Description 
-    /// calculates a tight upperbound estimate of the filesize in **bits** 
-    pub fn filesize_upperbound(&self)->u64{
-        let stream_upper = self.stream.capacity_upperbound() as u64 +
-        //streams internal cursor + capacity 
-         128*2 + 
-         //number of bits AudioStream need to store info 
-         mem::size_of::<StreamInfo>() as u64 * 8; 
 
-        stream_upper +
-        // compression level needs storage 
-        32 + 
-        //frame header
-        self.frame_header_list.calculate_weight_upperbound() 
+    fn info(&self) -> StreamInfo {
+        self.stream
+            .info()
+            .expect("info not initalized, call set_info/with_info before decoding")
+    }
+
+
+    /// # Description 
+    /// returns a tight upper-bound estimate on the number of bits needed to write this file 
+    fn filesize_upperbound(&self)->u64{
+        /*
+            the final filesize is roughly equal to:
+                FrameHeaderList_bits+
+                AudioStream_bits + 
+                compression_level_bits 
+        */
+        let audio_stream_header =         
+            //number of bits AudioStream need to store info 
+            mem::size_of::<StreamInfo>() as u64 * 8; 
+
+        let bitstream = self.stream.capacity_upperbound() as u64+ 
+          //streams internal cursor + capacity 
+          128*2 ;
+
+
+        let audio_stream_bits = audio_stream_header + bitstream;
+        let compression_level_bits = 32;
+        let frame_header_bits =  self.frame_header_list.calculate_weight_upperbound();
+
+        //estimated upperbound is..
+        audio_stream_bits + 
+        compression_level_bits + 
+        frame_header_bits
     }
 
     /// # Description
@@ -278,6 +293,10 @@ impl Streamable for AdhocCodec {
     
     fn info(&self) -> StreamInfo {
         self.info()
+    }
+    
+    fn filesize_upperbound(&self) ->u64 {
+        self.filesize_upperbound()
     }
 
     fn encode(&mut self, samples: &[f32]) -> Option<usize> {

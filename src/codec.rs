@@ -63,6 +63,11 @@ pub trait Streamable {
     /// returns fundamental information about the stream
     fn info(&self) -> StreamInfo;
 
+    /// # Description 
+    /// returns a **tight upperbound** of bits neeeded to store encoded data 
+    /// ## Comments
+    /// - can be used to set filesize limits
+    fn filesize_upperbound(&self)->u64;
 
     /// # Description
     /// encodes `samples` and returns number of samples encoded

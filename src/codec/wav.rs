@@ -257,6 +257,13 @@ impl Streamable for WavCodec {
     fn info(&self) -> StreamInfo {
         self.info()
     }
+
+    fn filesize_upperbound(&self) -> u64 {
+        let wav_header_in_bits = mem::size_of::<RawWavHeader>() as u64 * 8;
+        let wav_pcm_in_bits = self.pcm.len() as u64 * 8;
+        wav_header_in_bits + wav_pcm_in_bits
+    }
+
     fn encode(&mut self, samples: &[f32]) -> Option<usize> {
         let num_channels = self.info.channels();
         let valid_len = (samples.len() / num_channels) * num_channels;
@@ -275,7 +282,7 @@ impl Streamable for WavCodec {
         let samples_list = Self::get_pcm(&self.pcm);
 
         //makes sure we can't write partial PCM 'blocks'
-        let valid_length = (out.len()/num_channels)*num_channels;
+        let valid_length = (out.len() / num_channels) * num_channels;
 
         while *cursor < stream_length && out_cursor < valid_length {
             let sample_i16 = samples_list[*cursor as usize];

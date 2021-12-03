@@ -39,7 +39,7 @@ impl FrameHeaders {
     }
     
     /// # Description
-    /// return estimated number of **bits** required to serialize
+    /// returns a tight upperbound of **bits** required to serialize
     pub fn calculate_weight_upperbound(&self) -> u64 {
         let len = self.len() as u64;
 
