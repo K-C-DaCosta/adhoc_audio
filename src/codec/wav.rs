@@ -100,7 +100,7 @@ impl WavCodec {
         }
     }
 
-    pub fn info(&self) -> StreamInfo {
+    fn info(&self) -> StreamInfo {
         self.info
     }
 
@@ -254,6 +254,9 @@ impl WavCodec {
     }
 }
 impl Streamable for WavCodec {
+    fn info(&self) -> StreamInfo {
+        self.info()
+    }
     fn encode(&mut self, samples: &[f32]) -> Option<usize> {
         let num_channels = self.info.channels();
         let valid_len = (samples.len() / num_channels) * num_channels;

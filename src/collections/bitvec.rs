@@ -28,7 +28,7 @@ impl BitVec {
     }
 
     /// # Description
-    /// returns number of bits allocated in memory
+    /// returns number of *bits* allocated in memory
     pub fn capacity(&self) -> usize {
         self.binary.len() * 64
     }

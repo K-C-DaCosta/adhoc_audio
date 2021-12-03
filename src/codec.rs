@@ -58,6 +58,12 @@ impl StreamInfo {
 /// ## Comments
 /// - Some people may think it unusual to do audio stuff in f32 but WEBAUDIO API pretty much forces me to use them
 pub trait Streamable {
+    
+    /// # Description 
+    /// returns fundamental information about the stream
+    fn info(&self) -> StreamInfo;
+
+
     /// # Description
     /// encodes `samples` and returns number of samples encoded
     fn encode(&mut self, samples: &[f32]) -> Option<usize>;
@@ -70,7 +76,15 @@ pub trait Streamable {
 
     /// # Description
     /// Seeks to a certain spot in the stream
-    /// # Parameters
-    /// -`dt` is in milliseconds
+    /// ## Parameters 
+    /// - `dt` is change in time in milliseconds 
+    /// ## Comments
+    /// - Notes about `AdhocCodec`:
+    ///     - Intented to be used **ONLY** after you've completely finished encoding \
+    ///     audio, or you have just loaded the codec for the first time
+    ///     - with `AdhocCodec` you can't just seek to a random spot and start encoding
+    ///     - If you want to reuse the memory allocated call `AdhocCodec::init()` \
+    ///     before encoding to reuse the stream memory allocated
+    ///     - Currently only `SeekFrom::Start` is implemented
     fn seek(&mut self, dt: SeekFrom);
 }

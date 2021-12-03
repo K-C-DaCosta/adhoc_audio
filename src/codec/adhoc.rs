@@ -5,6 +5,7 @@ use std::{
     collections::VecDeque,
     io::{Read, Write},
     ops::{Deref, DerefMut},
+    mem,
 };
 
 use bincode;
@@ -77,7 +78,7 @@ impl AdhocCodec {
         self
     }
 
-    pub fn info(&self) -> StreamInfo {
+    fn info(&self) -> StreamInfo {
         self.stream
             .info()
             .expect("info not initalized, call set_info/with_info before decoding")
@@ -88,6 +89,22 @@ impl AdhocCodec {
         self.channel_state_list
             .resize(num_channels, FrameCodec::new());
         self.stream.set_info(Some(info));
+    }
+    
+    /// # Description 
+    /// calculates a tight upperbound estimate of the filesize in **bits** 
+    pub fn filesize_upperbound(&self)->u64{
+        let stream_upper = self.stream.capacity_upperbound() as u64 +
+        //streams internal cursor + capacity 
+         128*2 + 
+         //number of bits AudioStream need to store info 
+         mem::size_of::<StreamInfo>() as u64 * 8; 
+
+        stream_upper +
+        // compression level needs storage 
+        32 + 
+        //frame header
+        self.frame_header_list.calculate_weight_upperbound() 
     }
 
     /// # Description
@@ -258,6 +275,11 @@ impl AdhocCodec {
 }
 
 impl Streamable for AdhocCodec {
+    
+    fn info(&self) -> StreamInfo {
+        self.info()
+    }
+
     fn encode(&mut self, samples: &[f32]) -> Option<usize> {
         self.encode(samples);
 
@@ -403,7 +425,7 @@ mod test {
         println!("decoded:{:?}", &out_buffer[0..samples_read]);
         println!(
             "blocks allocated = {}\nbits written = {}\ncompression_ratio={}\nMean Squared Error={:.6}",
-            codec.stream.binary.len(),
+            codec.stream.blocks_allocated(),
             codec.stream.capacity(),
             codec.stream.capacity() as f32 / (data.len() * 16) as f32,
             mean_squared_error
@@ -439,7 +461,7 @@ mod test {
         println!("decoded:{:?}", &out_buffer[0..samples_read]);
         println!(
             "blocks allocated = {}\nbits written = {}\ncompression_ratio={}\nMean Squared Error={:.6}",
-            codec.stream.binary.len(),
+            codec.stream.blocks_allocated(),
             codec.stream.capacity(),
             codec.stream.capacity() as f32 / (data.len() * 16) as f32,
             mean_squared_error

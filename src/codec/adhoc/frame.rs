@@ -37,6 +37,51 @@ impl FrameHeaders {
             header_cursor: 0,
         }
     }
+    
+    /// # Description
+    /// return estimated number of **bits** required to serialize
+    pub fn calculate_weight_upperbound(&self) -> u64 {
+        let len = self.len() as u64;
+
+        //serde bincode needs to put length of vec before the elements get
+        //written out, this is my guess at the size(in bits) of the length value
+        let vector_header_size = 8;
+
+        let divisor_weight_in_bits = self.divisor_exp_list.capacity() as u64 + vector_header_size;
+
+        let is_init_weight_in_bits = self.is_init_frame_list.capacity() as u64 + vector_header_size;
+
+        let frame_size_list_weight_in_bits =
+            len * Self::get_elem_size_in_bits(&self.frame_size_list) + vector_header_size;
+
+        let bit_cursor_list_weight_in_bits =
+            len * Self::get_elem_size_in_bits(&self.bit_cursor_list) + vector_header_size;
+
+        let stack_history_list_in_bits =
+            len * Self::get_elem_size_in_bits(&self.stack_history_list) + vector_header_size;
+
+        let frame_list_header_cursor_in_bits =
+            std::mem::size_of_val(&self.header_cursor) as u64 * 8;
+
+        //internally NibbleList has a cursor
+        let nibble_list_cursor_in_bits = 32;
+
+        //internally BitVec has a 128 bit cursor
+        let bit_vec_cursor_in_bits = 128;
+
+        divisor_weight_in_bits
+            + is_init_weight_in_bits
+            + frame_size_list_weight_in_bits
+            + bit_cursor_list_weight_in_bits
+            + stack_history_list_in_bits
+            + frame_list_header_cursor_in_bits
+            + nibble_list_cursor_in_bits
+            + bit_vec_cursor_in_bits
+    }
+
+    const fn get_elem_size_in_bits<T>(_: &Vec<T>) -> u64 {
+        std::mem::size_of::<T>() as u64 * 8
+    }
 
     pub fn push(&mut self, header: FrameHeader) {
         let FrameHeader {

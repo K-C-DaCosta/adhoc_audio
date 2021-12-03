@@ -23,6 +23,12 @@ impl NibbleList {
         self.nibble_count as usize
     }
 
+    /// # Description
+    /// returns total number of bits allocated in buffer
+    pub fn capacity(&self) ->usize{
+        self.data.capacity() * 8
+    }
+
     pub fn push(&mut self, val: u8) {
         let block_idx = self.nibble_count as usize / 2;
         let nibble_idx = self.nibble_count % 2;

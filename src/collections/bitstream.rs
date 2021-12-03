@@ -16,15 +16,13 @@ const NUM_OF_BITS_IN_BYTES: usize = 8;
 MY THOUGHTS ON BITSTREAM IMPLEMENTATION
 
 
-
-DIAGRAM OF BITSTREAM:
-  chunks:         0                     1
-  bits:       127 126... 3 2 1 0 | 255 ... 129 128 |
+DIAGRAM OF BITSTREAM MEMORY LOOKS LIKE:
+  chunks:     --------0----------|-------1---------|
+  bits:       127 126... 3 2 1 0 | 255 ... 129 128 | ... 
   bit_cursor:      ^
 
 
   remaining_bits = 128 -chunk_bit_idx;
-
 
    0 1 0 1
    3 2 1 0
@@ -53,7 +51,7 @@ pub const CAPPED_MIN: i16 = -(CAPPED_MAX + 1);
 
 #[derive(Serialize, Deserialize)]
 pub struct BitStream {
-    pub binary: Vec<u128>,
+    binary: Vec<u128>,
     bit_cursor: u128,
     capacity: u128,
 }
@@ -76,11 +74,37 @@ impl BitStream {
             capacity: 0,
         }
     }
+
+    /// # Description
+    /// number of bits currently in the stream
+    /// ## Comments 
+    /// - all bits to the left of the `bit_cursor` is considered "allocated"
+    /// - all bits to the right(and including) of the `bit_cursor` is considered "free space"
     pub fn len(&self) -> usize {
         self.bit_cursor as usize
     }
+
+    /// # Description 
+    /// the maximum number of `bits` to have ever been written to the stream
+    /// ## Comments 
+    /// - not representative of the number of bits in memory see: `Self::capacity_upperbound(..)`
     pub fn capacity(&self) -> usize {
         self.capacity as usize
+    }
+
+    /// # Description
+    /// bits currently allocated in memory 
+    pub fn capacity_upperbound(&self)->usize{
+        // I don't do self.binary.capacity() because 
+        // the bincode serializer only writes data
+        // that has been Vec::push(..)'d 
+        self.binary.len() * 128
+    }
+
+    /// # Description
+    /// number of 128-bit chunks that have been allocated into memory
+    pub fn blocks_allocated(&self)->usize{
+        self.binary.len()
     }
 
     /// # Description
