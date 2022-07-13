@@ -5,31 +5,28 @@ use serde::{
 };
 use std::{fmt, marker::PhantomData};
 
-
-
+mod bitstream;
+mod bitvec;
 mod linked_list;
 mod lru_cache;
-mod bitstream;
-mod queue; 
-mod stack;
 mod nibble_list;
-mod bitvec;
+mod queue;
+mod stack;
 
+pub use bitstream::*;
+pub use bitvec::*;
 pub use linked_list::*;
 pub use lru_cache::*;
-pub use bitstream::*;
-pub use queue::*; 
-pub use stack::*; 
 pub use nibble_list::*;
-pub use bitvec::*;
+pub use queue::*;
+pub use stack::*;
 
 type InternalPtr = u32;
 
 #[derive(Copy, Clone, PartialEq, Serialize, serde::Deserialize, Debug)]
 /// #Description
-/// a pointer type for pointer-based data-structures 
+/// a pointer type for pointer-based data-structures
 pub struct Ptr(InternalPtr);
-
 
 impl Ptr {
     pub fn as_usize(&self) -> usize {

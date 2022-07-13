@@ -89,7 +89,7 @@ pub trait Streamable {
     /// - `dt` is change in time in milliseconds
     /// ## Comments
     /// - Notes about `AdhocCodec`:
-    ///     - Currently only `SeekFrom::Start` is implemented 
+    ///     - Currently only `SeekFrom::Start` is implemented
     ///     - Intented to be used **ONLY AFTER** you've completely finished encoding \
     ///     audio, or you have just loaded the codec for the first time
     ///     - with `AdhocCodec` you can't just seek to a random spot and start encoding

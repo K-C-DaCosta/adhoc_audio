@@ -87,7 +87,7 @@ impl AdhocCodec {
         self.stream.set_info(Some(info));
     }
 
-    fn info(&self) -> StreamInfo {
+    pub fn info(&self) -> StreamInfo {
         self.stream
             .info()
             .expect("info not initalized, call set_info/with_info before decoding")
@@ -140,6 +140,20 @@ impl AdhocCodec {
         self.frame_header_list.reset();
         self.channel_state_list.iter_mut().for_each(|cs| cs.init())
     }
+
+    pub fn calculate_samples_per_channel(&self)->u64{
+        let frame_header_list = &self.frame_header_list;
+        let num_channels = self.info().channels as u64;
+        let frame_count = self.frame_header_list.len();
+        
+        //this will count all samples in all channels
+        let total_samples_interleaved = (0..frame_count).filter_map(|idx| frame_header_list.get(idx)).map(|frame| frame.size as u64).sum::<u64>();
+        
+        //this returns the number of samples in a single channel
+        let total_samples_in_a_single_channel = total_samples_interleaved/num_channels;
+        total_samples_in_a_single_channel
+    }
+
 
     pub fn save_to<Resource>(&self, res: Resource) -> Option<()>
     where
@@ -294,7 +308,7 @@ impl Streamable for AdhocCodec {
     fn info(&self) -> StreamInfo {
         self.info()
     }
-
+    
     fn filesize_upperbound(&self) ->u64 {
         self.filesize_upperbound()
     }
@@ -304,6 +318,7 @@ impl Streamable for AdhocCodec {
 
         Some(samples.len())
     }
+
     fn decode(&mut self, samples: &mut [f32]) -> Option<usize> {
         let samples_read = self.decode(samples);
         (samples_read > 0).then(|| samples_read)
