@@ -98,3 +98,37 @@ fn main() {
     println!("taunt.adhoc written to: ./resources");
 }
 ```
+
+
+# Command line interface 
+A this package has a simple command line tool to convert back and forth between `.wav` and the `.adhoc` format.
+
+In terminal simply do: 
+
+```
+cargo install --path .
+```
+
+
+
+
+then to flags options do:
+```
+adhoc_audio -h
+```
+
+## Compress
+the simplest way to compress a wav is like so:
+```
+adhoc_audio ./resources/taunt.wav 
+```
+
+and it will create a `taunt.codec` in the current directory 
+
+## Decompress 
+building of the first example to decompress `taunt.codec` just:
+```
+adhoc_audio ./taunt.codec
+```
+
+and decompressed wav file will be written to your cwd

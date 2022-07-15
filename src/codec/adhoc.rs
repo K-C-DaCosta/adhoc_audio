@@ -141,7 +141,12 @@ impl AdhocCodec {
         self.channel_state_list.iter_mut().for_each(|cs| cs.init())
     }
 
-    pub fn calculate_samples_per_channel(&self)->u64{
+    /// # Description
+    /// computes number of samples per channel in O(n)
+    /// ## Comments
+    /// - Computes the count by looking at frame header data
+    /// - if you are only reading data, you should probably cache the results of this function
+    pub fn calculate_sample_count_per_channel(&self)->u64{
         let frame_header_list = &self.frame_header_list;
         let num_channels = self.info().channels as u64;
         let frame_count = self.frame_header_list.len();
